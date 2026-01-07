@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
+    const styleSelect = document.getElementById('style-select');
 
     // Store conversation history to maintain context
     let conversationHistory = [];
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         const userMessage = userInput.value.trim();
+        const selectedStyle = styleSelect.value; // Ambil nilai style dari dropdown
         if (!userMessage) return;
 
         // Add user message to chat box
@@ -40,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversation: [
                     ...conversationHistory,
                     { role: 'user', text: userMessage }
-                ]
+                ],
+                style: selectedStyle // Tambahkan parameter style
             };
 
             // Send POST request to the backend API
@@ -95,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function appendMessage(sender, text) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', sender);
-        
+
         // Format the message with role indicator
         const roleText = sender === 'user' ? 'You:' : 'Bot:';
         messageElement.innerHTML = `<strong>${roleText}</strong> ${text}`;
