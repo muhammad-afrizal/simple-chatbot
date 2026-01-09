@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ducky Interactive Entity</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f8ff;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #ducky-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .ducky-entity {
+      position: absolute;
+      z-index: 1000;
+    }
+    
+    .ducky-speech-bubble {
+      position: absolute;
+      background-color: white;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      z-index: 1001;
+      min-width: 80px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      display: none;
+      max-width: 150px;
+    }
+  </style>
+</head>
+<body>
+  <div id="ducky-container"></div>
+
+  <!-- Import semua file JavaScript -->
+  <script src="./src/DuckyEventSystem.js"></script>
+  <script src="./src/DuckyStateMachine.js"></script>
+  <script src="./src/DuckyRenderer.js"></script>
+  <script src="./src/DuckySpeechBubble.js"></script>
+  <script src="./src/DuckyEntity.js"></script>
+  
+  <script>
+    // Inisialisasi Ducky setelah DOM siap
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('ducky-container');
+      
+      // Buat instance DuckyEntity
+      const ducky = new DuckyEntity(container, {
+        basePath: './assets/Ducky/'
+      });
+    });
+  </script>
+</body>
+</html>

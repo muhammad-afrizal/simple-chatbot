@@ -19,6 +19,11 @@ app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Redirect root to ducky landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index-ducky.html'));
+});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server ready on http://localhost:${PORT}`));
 

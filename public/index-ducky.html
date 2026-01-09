@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ducky Landing Page</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div id="ducky-container" class="ducky-landing-container">
+    <!-- Garis tempat Ducky berjalan -->
+    <div id="ground-line" class="ground-line"></div>
+
+    <!-- Elemen Ducky -->
+    <img id="ducky-animation" src="assets/Ducky/idle.gif" alt="Ducky Character" class="ducky-animation" />
+
+    <!-- Speech bubble untuk Ducky -->
+    <div id="ducky-speech-bubble" class="ducky-speech-bubble"></div>
+  </div>
+
+  <!-- Customer Service Widget -->
+  <div id="customer-service-widget" class="customer-service-widget" style="display: none;">
+    <div class="chat-header">Ducky Customer Service</div>
+    <div id="chat-box" class="chat-box-customer"></div>
+    <div class="style-selector">
+      <select id="style-select">
+        <option value="normal">Normal</option>
+        <option value="santai">Santai</option>
+        <option value="formal">Formal</option>
+      </select>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Type your message..." />
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+
+  <script src="script-ducky-simple.js"></script>
+  <script>
+    // Customer Service Widget Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const customerServiceWidget = document.getElementById('customer-service-widget');
+      const chatBox = document.getElementById('chat-box');
+      const userInput = document.getElementById('user-input');
+      const sendButton = document.getElementById('send-button');
+      const styleSelect = document.getElementById('style-select');
+
+      let conversationHistory = [];
+
+      // Function to show customer service widget
+      function showCustomerService() {
+        customerServiceWidget.style.display = 'block';
+        userInput.focus();
+      }
+
+      // Function to hide customer service widget
+      function hideCustomerService() {
+        customerServiceWidget.style.display = 'none';
+      }
+
+      // Send message function
+      function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        appendMessage('user', message);
+        userInput.value = '';
+
+        // Show "Thinking..." message
+        const thinkingElement = appendMessage('bot', 'Thinking...');
+
+        // Prepare request
+        const requestBody = {
+          conversation: [
+            ...conversationHistory,
+            { role: 'user', text: message }
+          ],
+          style: styleSelect.value
+        };
+
+        // Send request to API
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Remove "Thinking..." message
+          if (thinkingElement && thinkingElement.parentNode) {
+            thinkingElement.parentNode.removeChild(thinkingElement);
+          }
+
+          if (data && data.result) {
+            // Add bot response
+            appendMessage('bot', data.result);
+
+            // Update conversation history
+            conversationHistory.push({ role: 'user', text: message });
+            conversationHistory.push({ role: 'bot', text: data.result });
+          } else {
+            appendMessage('bot', 'Sorry, no response received.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Remove "Thinking..." message
+          if (thinkingElement && thinkingElement.parentNode) {
+            thinkingElement.parentNode.removeChild(thinkingElement);
+          }
+          appendMessage('bot', 'Failed to get response from server.');
+        });
+      }
+
+      // Event listeners for customer service widget
+      sendButton.addEventListener('click', sendMessage);
+
+      userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendMessage();
+        }
+      });
+
+      // Function to append messages
+      function appendMessage(sender, text) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message-customer', sender);
+
+        const roleText = sender === 'user' ? 'You:' : 'Bot:';
+        messageElement.innerHTML = `<strong>${roleText}</strong> ${text}`;
+
+        chatBox.appendChild(messageElement);
+
+        // Scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        return messageElement;
+      }
+
+      // Expose functions to global scope so they can be called from ducky script
+      window.showCustomerService = showCustomerService;
+      window.hideCustomerService = hideCustomerService;
+    });
+  </script>
+</body>
+</html>

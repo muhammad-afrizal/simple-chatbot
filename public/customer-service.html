@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ducky Customer Service</title>
+  <style>
+    /* Customer Service Widget Styles */
+    .customer-service-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+    }
+
+    .toggle-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .toggle-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .chat-container {
+      width: 350px;
+      height: 450px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      position: absolute;
+      bottom: 80px;
+      right: 0;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-color: #fafafa;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 10px 15px;
+      border-radius: 18px;
+      line-height: 1.4;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.bot {
+      align-self: flex-start;
+      background: white;
+      border: 1px solid #eee;
+      color: #333;
+      border-bottom-left-radius: 5px;
+    }
+
+    .message.bot::before {
+      content: "🦆 ";
+      font-size: 0.8rem;
+      margin-right: 5px;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 25px;
+      outline: none;
+    }
+
+    #send-button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+
+    .style-selector {
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+
+    #style-select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="customer-service-widget">
+    <button id="toggle-button" class="toggle-button">💬</button>
+    <div id="chat-container" class="chat-container">
+      <div class="chat-header">Ducky Customer Service</div>
+      <div id="chat-box" class="chat-box"></div>
+      <div class="style-selector">
+        <select id="style-select">
+          <option value="normal">Normal</option>
+          <option value="santai">Santai</option>
+          <option value="formal">Formal</option>
+        </select>
+      </div>
+      <div class="input-area">
+        <input type="text" id="user-input" placeholder="Type your message..." />
+        <button id="send-button">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleButton = document.getElementById('toggle-button');
+      const chatContainer = document.getElementById('chat-container');
+      const chatBox = document.getElementById('chat-box');
+      const userInput = document.getElementById('user-input');
+      const sendButton = document.getElementById('send-button');
+      const styleSelect = document.getElementById('style-select');
+
+      let isOpen = false;
+      let conversationHistory = [];
+
+      // Toggle chat widget
+      toggleButton.addEventListener('click', () => {
+        isOpen = !isOpen;
+        chatContainer.style.display = isOpen ? 'flex' : 'none';
+        if (isOpen) {
+          userInput.focus();
+        }
+      });
+
+      // Send message function
+      function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        appendMessage('user', message);
+        userInput.value = '';
+
+        // Show "Thinking..." message
+        const thinkingElement = appendMessage('bot', 'Thinking...');
+
+        // Prepare request
+        const requestBody = {
+          conversation: [
+            ...conversationHistory,
+            { role: 'user', text: message }
+          ],
+          style: styleSelect.value
+        };
+
+        // Send request to API
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Remove "Thinking..." message
+          if (thinkingElement && thinkingElement.parentNode) {
+            thinkingElement.parentNode.removeChild(thinkingElement);
+          }
+
+          if (data && data.result) {
+            // Add bot response
+            appendMessage('bot', data.result);
+            
+            // Update conversation history
+            conversationHistory.push({ role: 'user', text: message });
+            conversationHistory.push({ role: 'bot', text: data.result });
+          } else {
+            appendMessage('bot', 'Sorry, no response received.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Remove "Thinking..." message
+          if (thinkingElement && thinkingElement.parentNode) {
+            thinkingElement.parentNode.removeChild(thinkingElement);
+          }
+          appendMessage('bot', 'Failed to get response from server.');
+        });
+      }
+
+      // Event listeners
+      sendButton.addEventListener('click', sendMessage);
+      
+      userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          sendMessage();
+        }
+      });
+
+      // Function to append messages
+      function appendMessage(sender, text) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', sender);
+        
+        const roleText = sender === 'user' ? 'You:' : 'Bot:';
+        messageElement.innerHTML = `<strong>${roleText}</strong> ${text}`;
+        
+        chatBox.appendChild(messageElement);
+        
+        // Scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        return messageElement;
+      }
+
+      // Close chat when clicking outside
+      document.addEventListener('click', (e) => {
+        if (isOpen && 
+            !chatContainer.contains(e.target) && 
+            e.target !== toggleButton) {
+          isOpen = false;
+          chatContainer.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
